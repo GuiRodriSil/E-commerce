@@ -27,6 +27,59 @@
 
       <BenefitsBanner />
 
+      <section v-if="recentlyViewedStore.products.length" class="mb-12">
+        <div class="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Continue de onde parou</p>
+            <h2 class="mt-1 text-3xl font-bold text-slate-900">Vistos Recentemente</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+              @click="clearRecentlyViewed"
+            >
+              Limpar histórico
+            </button>
+            <button
+              type="button"
+              aria-label="Ver produtos anteriores"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 shadow-sm hover:bg-slate-50"
+              @click="scrollRecentProducts(-1)"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              aria-label="Ver próximos produtos"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 shadow-sm hover:bg-slate-50"
+              @click="scrollRecentProducts(1)"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        <div ref="recentProductsCarousel" class="flex snap-x gap-5 overflow-x-auto pb-3 scrollbar-hide">
+          <router-link
+            v-for="product in recentlyViewedStore.products"
+            :key="product.id"
+            :to="`/product/${product.id}`"
+            class="group min-w-[260px] snap-start overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft sm:min-w-[300px]"
+          >
+            <div class="aspect-[16/10] overflow-hidden bg-slate-100">
+              <img :src="product.image" :alt="product.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            </div>
+            <div class="p-4">
+              <h3 class="truncate font-bold text-slate-900">{{ product.name }}</h3>
+              <span v-if="product.originalPrice" class="mr-2 text-sm text-slate-400 line-through">R$ {{ Number(product.originalPrice).toFixed(2) }}</span>
+              <span v-if="product.offer" class="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-orange-700">Oferta</span>
+              <p class="mt-2 text-lg font-black text-slate-900">R$ {{ Number(product.price).toFixed(2) }}</p>
+            </div>
+          </router-link>
+        </div>
+      </section>
+
       <section ref="productsSection">
         <div class="mb-6 flex items-center justify-between">
           <div>
@@ -49,12 +102,24 @@
 
         <div v-else class="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
           <article v-for="product in visibleProducts" :key="product.id" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
-            <div class="aspect-[4/3] overflow-hidden bg-slate-100">
-              <img
-                :src="product.image"
-                :alt="product.name"
-                class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              />
+            <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
+              <router-link :to="`/product/${product.id}`" :aria-label="`Ver detalhes de ${product.name}`" class="block h-full">
+                <img
+                  :src="product.image"
+                  :alt="product.name"
+                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              </router-link>
+              <button
+                type="button"
+                :aria-label="wishlistStore.isFavorite(product) ? `Remover ${product.name} dos favoritos` : `Adicionar ${product.name} aos favoritos`"
+                :aria-pressed="wishlistStore.isFavorite(product)"
+                :class="wishlistStore.isFavorite(product) ? 'bg-rose-500 text-white' : 'bg-white/90 text-slate-700 hover:bg-white'"
+                class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-2xl shadow-md transition hover:scale-105"
+                @click="wishlistStore.toggleFavorite(product)"
+              >
+                {{ wishlistStore.isFavorite(product) ? '♥' : '♡' }}
+              </button>
             </div>
 
             <div class="space-y-4 p-5">
@@ -77,10 +142,11 @@
                   <span class="text-2xl font-black text-slate-900">R$ {{ product.price.toFixed(2) }}</span>
                 </div>
                 <button
+                  :disabled="!cartStore.canAddItem(product)"
                   @click="cartStore.addItem(product)"
-                  class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                  class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Adicionar
+                  {{ cartStore.canAddItem(product) ? 'Adicionar' : 'Estoque máximo' }}
                 </button>
               </div>
 
@@ -100,15 +166,20 @@ import { computed, onMounted, ref, watch } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import BenefitsBanner from '../components/BenefitsBanner.vue'
 import { useCartStore } from '../stores/cartStore'
-import { products } from '../data/products'
+import { useRecentlyViewedStore } from '../stores/useRecentlyViewedStore'
+import { useWishlistStore } from '../stores/useWishlistStore'
+import { products, withOfferDetails } from '../data/products'
 
 const cartStore = useCartStore()
+const recentlyViewedStore = useRecentlyViewedStore()
+const wishlistStore = useWishlistStore()
 const displayedProducts = ref(products)
 const selectedCategory = ref('')
 const currentSearch = ref('')
 const loading = ref(false)
 const showOffers = ref(false)
 const productsSection = ref(null)
+const recentProductsCarousel = ref(null)
 const categories = [
   { label: 'Eletrônicos', value: 'Eletronicos' },
   { label: 'Áudio', value: 'Audio' },
@@ -125,11 +196,11 @@ const offerDetails = {
 }
 
 const normalizeProduct = (product) => ({
-  ...product,
+  ...withOfferDetails(product),
   category: categoryLabels[product.category?.name || product.category] || product.category?.name || product.category || 'Sem categoria',
   image: product.image || product.image_url || '',
-  originalPrice: offerDetails[product.name],
-  offer: Boolean(offerDetails[product.name]),
+  originalPrice: offerDetails[product.name] ?? product.originalPrice,
+  offer: Boolean(offerDetails[product.name] ?? product.originalPrice),
 })
 
 const loadProducts = async () => {
@@ -160,6 +231,14 @@ const handleSearch = (value) => {
 }
 
 const visibleProducts = computed(() => showOffers.value ? displayedProducts.value.filter((product) => product.offer) : displayedProducts.value)
+
+const scrollRecentProducts = (direction) => {
+  recentProductsCarousel.value?.scrollBy({ left: direction * 320, behavior: 'smooth' })
+}
+
+const clearRecentlyViewed = () => {
+  recentlyViewedStore.clearHistory()
+}
 
 const showOffersAndScroll = () => {
   showOffers.value = true

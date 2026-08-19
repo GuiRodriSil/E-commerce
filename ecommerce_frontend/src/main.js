@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage.vue'
 import RegisterPage from './pages/RegisterPage.vue'
 import ProfilePage from './pages/ProfilePage.vue'
 import SupportPage from './pages/SupportPage.vue'
+import WishlistPage from './pages/WishlistPage.vue'
 import { useAuthStore } from './stores/useAuthStore'
 
 const routes = [
@@ -22,12 +23,16 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
   { path: '/profile', component: ProfilePage },
+  { path: '/wishlist', component: WishlistPage },
   { path: '/support', component: SupportPage },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || { top: 0 }
+  },
 })
 
 router.beforeEach((to) => {

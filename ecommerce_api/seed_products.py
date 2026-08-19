@@ -83,6 +83,38 @@ PRODUCTS = [
         "stock": 31,
         "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80",
     },
+    {
+        "name": "Tablet Vision 11",
+        "category": "Eletronicos",
+        "description": "Tablet leve com tela de alta definicao, desempenho fluido e bateria para o dia inteiro.",
+        "price": 1199.90,
+        "stock": 14,
+        "image_url": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Luminaria de Mesa LED",
+        "category": "Casa",
+        "description": "Luminaria articulada com luz regulavel para deixar seu espaco de trabalho mais confortavel.",
+        "price": 129.90,
+        "stock": 24,
+        "image_url": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Mouse Sem Fio Precision",
+        "category": "Acessorios",
+        "description": "Mouse ergonomico sem fio com sensor preciso e bateria de longa duracao.",
+        "price": 159.90,
+        "stock": 35,
+        "image_url": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Microfone Studio USB",
+        "category": "Audio",
+        "description": "Microfone USB com captacao nitida para reunioes, podcasts e criacao de conteudo.",
+        "price": 329.90,
+        "stock": 11,
+        "image_url": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=80",
+    },
 ]
 
 

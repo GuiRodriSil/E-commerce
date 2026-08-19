@@ -20,8 +20,10 @@
           </span>
           <h1 class="text-4xl font-black tracking-tight text-slate-900">{{ product.name }}</h1>
 
-          <div class="mt-5 flex items-center gap-4">
+          <div class="mt-5 flex flex-wrap items-center gap-4">
+            <span v-if="product.originalPrice" class="text-base text-slate-400 line-through">R$ {{ product.originalPrice.toFixed(2) }}</span>
             <span class="text-3xl font-black text-slate-900">R$ {{ product.price.toFixed(2) }}</span>
+            <span v-if="product.offer" class="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">Oferta</span>
             <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
               {{ product.stock }} em estoque
             </span>
@@ -31,10 +33,11 @@
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
+              :disabled="!cartStore.canAddItem(product)"
               @click="cartStore.addItem(product)"
-              class="flex-1 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-700"
+              class="flex-1 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Adicionar ao carrinho
+              {{ cartStore.canAddItem(product) ? 'Adicionar ao carrinho' : 'Estoque máximo' }}
             </button>
             <button class="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               Comprar agora
@@ -42,6 +45,8 @@
           </div>
         </div>
       </div>
+
+      <RelatedProducts :product-id="product.id" />
     </main>
 
     <main v-else class="mx-auto max-w-6xl px-4 py-10 text-center">
@@ -51,13 +56,24 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
+import RelatedProducts from '../components/RelatedProducts.vue'
 import { useCartStore } from '../stores/cartStore'
+import { useRecentlyViewedStore } from '../stores/useRecentlyViewedStore'
 import { products } from '../data/products'
 
 const route = useRoute()
 const cartStore = useCartStore()
+const recentlyViewedStore = useRecentlyViewedStore()
 const product = computed(() => products.find((item) => item.id === Number(route.params.id)))
+
+watch(() => route.params.id, () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+watch(product, (visitedProduct) => {
+  if (visitedProduct) recentlyViewedStore.addProduct(visitedProduct)
+}, { immediate: true })
 </script>

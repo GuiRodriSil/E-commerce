@@ -22,13 +22,15 @@
             <img :src="item.image" :alt="item.name" class="h-20 w-20 rounded-2xl object-cover" />
             <div class="flex-1">
               <h2 class="text-lg font-bold text-slate-900">{{ item.name }}</h2>
+              <p v-if="item.originalPrice" class="text-sm text-slate-400 line-through">R$ {{ item.originalPrice.toFixed(2) }}</p>
+              <p v-if="item.offer" class="text-[10px] font-bold uppercase tracking-widest text-orange-700">Oferta</p>
               <p class="text-sm text-slate-500">R$ {{ item.price.toFixed(2) }} cada</p>
             </div>
 
             <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1">
               <button @click="cart.updateQuantity(item.id, item.quantity - 1)" class="h-8 w-8 rounded-full text-lg text-slate-700 hover:bg-slate-200">−</button>
               <span class="min-w-6 text-center text-sm font-semibold text-slate-900">{{ item.quantity }}</span>
-              <button @click="cart.updateQuantity(item.id, item.quantity + 1)" class="h-8 w-8 rounded-full text-lg text-slate-700 hover:bg-slate-200">+</button>
+              <button :disabled="!cart.canIncrease(item.id)" @click="cart.updateQuantity(item.id, item.quantity + 1)" class="h-8 w-8 rounded-full text-lg text-slate-700 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40">+</button>
             </div>
 
             <button @click="cart.removeItem(item.id)" class="ml-2 text-sm font-medium text-red-600 hover:text-red-700">Remover</button>

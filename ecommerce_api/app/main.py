@@ -256,6 +256,29 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return product
 
 
+@app.get("/products/{product_id}/related", response_model=List[schemas.ProductOut], tags=["products"])
+def list_related_products(product_id: int, db: Session = Depends(get_db)):
+    """Retorna até quatro produtos ativos da mesma categoria, exceto o produto informado."""
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produto não encontrado")
+    if product.category_id is None:
+        return []
+
+    return (
+        db.query(models.Product)
+        .options(joinedload(models.Product.category))
+        .filter(
+            models.Product.is_active == True,  # noqa: E712
+            models.Product.category_id == product.category_id,
+            models.Product.id != product_id,
+        )
+        .order_by(models.Product.id)
+        .limit(4)
+        .all()
+    )
+
+
 # --------------------------------------------------------------------------
 # Checkout / Orders
 # --------------------------------------------------------------------------

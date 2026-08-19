@@ -30,9 +30,20 @@
           Perfil
         </router-link>
         <router-link
-          to="/cart"
+          to="/wishlist"
+          class="relative flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-3 text-slate-700 shadow-sm hover:bg-slate-100"
+          aria-label="Ir para os favoritos"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">♡</span>
+          <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+            {{ wishlistStore.favorites.length }}
+          </span>
+        </router-link>
+        <button
+          type="button"
           class="relative flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-3 text-slate-700 shadow-sm hover:bg-slate-100"
           aria-label="Ir para o carrinho"
+          @click="cartDrawerOpen = true"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7M17 13l1.5 7M9 20a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" />
@@ -40,19 +51,24 @@
           <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
             {{ cartStore.itemCount }}
           </span>
-        </router-link>
+        </button>
       </div>
     </div>
   </header>
+  <CartDrawer :open="cartDrawerOpen" @close="cartDrawerOpen = false" />
 </template>
 
 <script setup>
 import { onBeforeUnmount, ref, watch } from 'vue'
+import CartDrawer from './CartDrawer.vue'
 import { useCartStore } from '../stores/cartStore'
+import { useWishlistStore } from '../stores/useWishlistStore'
 
 const emit = defineEmits(['search-change'])
 const search = ref('')
 const cartStore = useCartStore()
+const wishlistStore = useWishlistStore()
+const cartDrawerOpen = ref(false)
 let searchTimer
 
 watch(search, (value) => {

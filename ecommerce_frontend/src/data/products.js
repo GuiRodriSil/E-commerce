@@ -109,4 +109,51 @@ export const products = [
     image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80',
     description: 'Caixa de som portátil com graves fortes, bateria duradoura e conexão sem fio.',
   },
+  {
+    id: 11,
+    name: 'Tablet Vision 11',
+    category: 'Eletrônicos',
+    price: 1199.9,
+    stock: 14,
+    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=900&q=80',
+    description: 'Tablet leve com tela de alta definição, desempenho fluido e bateria para o dia inteiro.',
+  },
+  {
+    id: 12,
+    name: 'Luminária de Mesa LED',
+    category: 'Casa',
+    price: 129.9,
+    stock: 24,
+    image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80',
+    description: 'Luminária articulada com luz regulável para deixar seu espaço de trabalho mais confortável.',
+  },
+  {
+    id: 13,
+    name: 'Mouse Sem Fio Precision',
+    category: 'Acessórios',
+    price: 159.9,
+    stock: 35,
+    image: 'https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80',
+    description: 'Mouse ergonômico sem fio com sensor preciso e bateria de longa duração.',
+  },
+  {
+    id: 14,
+    name: 'Microfone Studio USB',
+    category: 'Áudio',
+    price: 329.9,
+    stock: 11,
+    image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=80',
+    description: 'Microfone USB com captação nítida para reuniões, podcasts e criação de conteúdo.',
+  },
 ]
+
+export const withOfferDetails = (product) => {
+  const catalogProduct = products.find((item) => item.id === product.id)
+  const originalPrice = product.originalPrice ?? catalogProduct?.originalPrice
+
+  return {
+    ...product,
+    originalPrice,
+    offer: Boolean(originalPrice),
+  }
+}

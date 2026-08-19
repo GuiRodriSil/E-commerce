@@ -31,19 +31,29 @@
 
           <div v-for="item in cart.items" :key="item.id" class="grid gap-4 border-b border-slate-200 px-6 py-5 md:grid-cols-[1.6fr_0.9fr_0.9fr_0.7fr] md:items-center">
             <div class="flex items-center gap-4">
-              <img :src="item.image" :alt="item.name" class="h-20 w-20 rounded-2xl object-cover" />
+              <router-link :to="`/product/${item.id}`" :aria-label="`Ver detalhes de ${item.name}`">
+                <img :src="item.image" :alt="item.name" class="h-20 w-20 rounded-2xl object-cover transition hover:scale-105" />
+              </router-link>
               <div>
-                <h2 class="text-lg font-bold text-slate-900">{{ item.name }}</h2>
+                <h2 class="text-lg font-bold text-slate-900">
+                  <router-link :to="`/product/${item.id}`" class="hover:text-slate-600">
+                    {{ item.name }}
+                  </router-link>
+                </h2>
                 <button @click="cart.removeItem(item.id)" class="mt-1 text-sm text-red-600 hover:text-red-700">Remover</button>
               </div>
             </div>
 
-            <div class="text-base font-semibold text-slate-900">R$ {{ item.price.toFixed(2) }}</div>
+            <div>
+              <span v-if="item.originalPrice" class="mr-2 text-sm text-slate-400 line-through">R$ {{ item.originalPrice.toFixed(2) }}</span>
+              <span v-if="item.offer" class="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-orange-700">Oferta</span>
+              <span class="mt-1 block text-base font-semibold text-slate-900">R$ {{ item.price.toFixed(2) }}</span>
+            </div>
 
             <div class="flex items-center gap-2">
               <button @click="cart.updateQuantity(item.id, item.quantity - 1)" class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg text-slate-700 hover:bg-slate-100">−</button>
               <span class="min-w-8 text-center text-base font-semibold text-slate-900">{{ item.quantity }}</span>
-              <button @click="cart.updateQuantity(item.id, item.quantity + 1)" class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg text-slate-700 hover:bg-slate-100">+</button>
+              <button :disabled="!cart.canIncrease(item.id)" @click="cart.updateQuantity(item.id, item.quantity + 1)" class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">+</button>
             </div>
 
             <div class="text-base font-bold text-slate-900">R$ {{ (item.price * item.quantity).toFixed(2) }}</div>
