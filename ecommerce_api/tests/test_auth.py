@@ -74,3 +74,16 @@ def test_current_user_profile_and_update_are_protected():
         json={"email": unique_email, "password": "novasenha"},
     )
     assert login_response.status_code == 200, login_response.text
+
+
+def test_protected_route_allows_cors_preflight_without_jwt():
+    response = client.options(
+        "/payments/mercadopago",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+
+    assert response.status_code == 200, response.text

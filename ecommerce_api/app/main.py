@@ -3,6 +3,7 @@ import uuid
 from typing import List
 
 import mercadopago
+from google import genai
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import or_
@@ -22,6 +23,50 @@ from app.database import Base, engine, get_db
 Base.metadata.create_all(bind=engine)
 
 sdk = mercadopago.SDK(os.getenv("MERCADO_PAGO_ACCESS_TOKEN", "TEST-0000000000000000-000000-000000000000000000000000000000000000"))
+
+CHAT_SYSTEM_PROMPT = """
+Você é o atendente virtual da nossa loja de e-commerce.
+Responda sempre em português do Brasil, de forma cordial, objetiva e útil.
+Tire dúvidas apenas sobre produtos da loja, disponibilidade, preços, entregas,
+pagamentos e políticas de troca/devolução. Não invente informações específicas
+como estoque, prazo ou status de pedido; quando não tiver dados suficientes,
+explique a limitação e oriente o cliente a consultar o Perfil ou falar com o
+suporte humano em /support. Nunca solicite ou revele senhas, tokens ou dados
+completos de cartão. Para assuntos fora do escopo, diga que pode ajudar apenas
+com dúvidas relacionadas à loja.
+""".strip()
+
+
+def _is_gemini_unavailable(error: Exception) -> bool:
+    error_text = str(error).upper()
+    return "503" in error_text or "UNAVAILABLE" in error_text or "HIGH DEMAND" in error_text
+
+
+def _generate_chat_response(client, message: str) -> str:
+    models_to_try = [os.getenv("GEMINI_MODEL", "gemini-3.6-flash")]
+    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash")
+    if fallback_model and fallback_model not in models_to_try:
+        models_to_try.append(fallback_model)
+
+    last_error = None
+    for model in models_to_try:
+        for _ in range(2):
+            try:
+                result = client.models.generate_content(
+                    model=model,
+                    contents=message,
+                    config={"system_instruction": CHAT_SYSTEM_PROMPT},
+                )
+                response_text = (result.text or "").strip()
+                if response_text:
+                    return response_text
+                last_error = RuntimeError("O Gemini não retornou uma resposta")
+            except Exception as exc:
+                last_error = exc
+                if not _is_gemini_unavailable(exc):
+                    raise
+
+    raise last_error or RuntimeError("O Gemini não retornou uma resposta")
 
 app = FastAPI(
     title="E-commerce API",
@@ -46,6 +91,31 @@ app.middleware("http")(auth_middleware)
 @app.get("/", tags=["health"])
 def root():
     return {"status": "ok", "service": "ecommerce-api"}
+
+
+@app.post("/api/chat", response_model=schemas.ChatResponse, tags=["chat"])
+def chat(chat_in: schemas.ChatRequest):
+    """Envia uma dúvida ao atendente virtual baseado em Gemini."""
+    message = chat_in.message.strip()
+    if not message:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A mensagem não pode ficar vazia")
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="GEMINI_API_KEY não configurada")
+
+    try:
+        client = genai.Client(api_key=api_key)
+        return {"response": _generate_chat_response(client, message)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if _is_gemini_unavailable(exc):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="O atendente está temporariamente sobrecarregado. Tente novamente em alguns instantes ou use a página /support.",
+            ) from exc
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Erro ao consultar o Gemini: {str(exc)}") from exc
 
 
 # --------------------------------------------------------------------------
@@ -208,6 +278,9 @@ def create_payment(
     if total <= 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O valor total deve ser maior que zero")
 
+    if any(item.quantity <= 0 or item.unit_price <= 0 for item in payment_in.items):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Itens do pagamento devem ter quantidade e preço positivos")
+
     preference_data = {
         "items": [
             {
@@ -219,7 +292,7 @@ def create_payment(
             }
             for item in payment_in.items
         ],
-        "payer": {"email": payment_in.payer_email},
+        "payer": {"email": current_user.email},
         "payment_methods": {"excluded_payment_types": [{"id": "ticket"}], "installments": 1},
         "back_urls": {"success": "http://localhost:5173", "failure": "http://localhost:5173", "pending": "http://localhost:5173"},
         "auto_return": "approved",

@@ -50,6 +50,15 @@ class PaymentResponse(BaseModel):
     checkout_url: Optional[str] = None
 
 
+# ---------- Chat ----------
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    response: str
+
+
 # ---------- Support ----------
 class SupportTicketCreate(BaseModel):
     name: str

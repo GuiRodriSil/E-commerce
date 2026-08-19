@@ -64,6 +64,9 @@ async def get_current_user(
 
 
 async def auth_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     if not (
         request.url.path == "/orders"
         or request.url.path.startswith("/orders/")

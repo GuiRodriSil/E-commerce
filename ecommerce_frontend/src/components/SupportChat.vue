@@ -16,19 +16,20 @@
           </p>
         </div>
         <div v-if="isTyping" class="flex justify-start">
-          <p class="rounded-2xl rounded-bl-md bg-white px-3 py-2 text-sm text-slate-400 shadow-sm">Digitando...</p>
+          <p class="rounded-2xl rounded-bl-md bg-white px-3 py-2 text-sm text-slate-400 shadow-sm">Atendente pensando...</p>
         </div>
+        <p v-if="errorMessage" class="rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">{{ errorMessage }}</p>
       </div>
 
       <div class="border-t border-slate-200 bg-white p-3">
         <div class="mb-3 flex flex-wrap gap-2">
-          <button v-for="question in quickQuestions" :key="question" @click="sendMessage(question)" class="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100">
+          <button v-for="question in quickQuestions" :key="question" @click="sendMessage(question)" :disabled="isTyping" class="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50">
             {{ question }}
           </button>
         </div>
         <form @submit.prevent="sendMessage(messageInput)" class="flex items-center gap-2">
-          <input v-model="messageInput" type="text" placeholder="Digite sua dúvida..." class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-slate-400" />
-          <button type="submit" aria-label="Enviar mensagem" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-lg text-white hover:bg-orange-600">↑</button>
+          <input v-model="messageInput" :disabled="isTyping" type="text" placeholder="Digite sua dúvida..." class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60" />
+          <button type="submit" :disabled="isTyping" aria-label="Enviar mensagem" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-lg text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">↑</button>
         </form>
       </div>
     </section>
@@ -47,6 +48,7 @@ import { nextTick, ref } from 'vue'
 const isOpen = ref(false)
 const messageInput = ref('')
 const isTyping = ref(false)
+const errorMessage = ref('')
 const messagesElement = ref(null)
 let nextMessageId = 2
 
@@ -56,34 +58,36 @@ const messages = ref([
 
 const quickQuestions = ['Onde está meu pedido?', 'Como faço uma troca?', 'Quais pagamentos aceitam?']
 
-const responses = {
-  'Onde está meu pedido?': 'Você pode acompanhar pedidos recentes no seu Perfil, na seção “Pedidos recentes”.',
-  'Como faço uma troca?': 'A troca é gratuita em até 30 dias. Consulte nossa equipe pelo formulário de suporte.',
-  'Quais pagamentos aceitam?': 'Aceitamos PIX, cartão de crédito e boleto bancário.',
-}
-
 const scrollToBottom = async () => {
   await nextTick()
   messagesElement.value?.scrollTo({ top: messagesElement.value.scrollHeight, behavior: 'smooth' })
 }
 
-const sendMessage = (text) => {
+const sendMessage = async (text) => {
   const cleanText = text.trim()
   if (!cleanText || isTyping.value) return
 
   messages.value.push({ id: nextMessageId++, from: 'customer', text: cleanText })
   messageInput.value = ''
+  errorMessage.value = ''
   scrollToBottom()
   isTyping.value = true
 
-  window.setTimeout(() => {
-    messages.value.push({
-      id: nextMessageId++,
-      from: 'support',
-      text: responses[cleanText] || 'Obrigado pela mensagem! Para uma resposta detalhada, envie uma solicitação na página de suporte.',
+  try {
+    const response = await fetch('http://localhost:8000/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: cleanText }),
     })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || 'Não foi possível falar com o atendente.')
+
+    messages.value.push({ id: nextMessageId++, from: 'support', text: data.response })
+  } catch (error) {
+    errorMessage.value = error.message || 'O servidor está indisponível. Tente novamente em instantes.'
+  } finally {
     isTyping.value = false
     scrollToBottom()
-  }, 650)
+  }
 }
 </script>
