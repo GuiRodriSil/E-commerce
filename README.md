@@ -1,4 +1,4 @@
-# E-commerce Marketplace
+# Pulse Market
 
 Aplicação de e-commerce com frontend em Vue 3 e Tailwind CSS, API em FastAPI, persistência em PostgreSQL e autenticação por JWT.
 
@@ -15,7 +15,7 @@ E-commerce/
 ### Funcionalidades
 
 - Catálogo com 50 produtos e 10 produtos por categoria
-- Busca com autocomplete em tempo real, sem diferença entre acentos e sem interferência de símbolos
+- Busca com autocomplete em tempo real
 - Filtros por categoria em botões/pílulas
 - Produtos em oferta com preço original riscado e preço promocional
 - Página de detalhes com zoom da imagem principal

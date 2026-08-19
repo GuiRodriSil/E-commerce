@@ -27,6 +27,9 @@ sdk = mercadopago.SDK(os.getenv("MERCADO_PAGO_ACCESS_TOKEN", "TEST-0000000000000
 CHAT_SYSTEM_PROMPT = """
 Você é o atendente virtual da nossa loja de e-commerce.
 Responda sempre em português do Brasil, de forma cordial, objetiva e útil.
+Prefira respostas curtas e diretas, com 1 a 3 frases. Vá direto à resposta,
+evite introduções, repetições e explicações longas. Use listas curtas apenas
+quando ajudarem na clareza.
 Tire dúvidas apenas sobre produtos da loja, disponibilidade, preços, entregas,
 pagamentos e políticas de troca/devolução. Não invente informações específicas
 como estoque, prazo ou status de pedido; quando não tiver dados suficientes,
@@ -69,7 +72,7 @@ def _generate_chat_response(client, message: str) -> str:
     raise last_error or RuntimeError("O Gemini não retornou uma resposta")
 
 app = FastAPI(
-    title="E-commerce API",
+    title="Pulse Market API",
     description="API REST para e-commerce com FastAPI + SQLAlchemy + PostgreSQL",
     version="1.0.0",
 )

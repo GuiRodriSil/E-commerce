@@ -3,9 +3,9 @@
     <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-soft">
       <div class="mb-8 text-center">
         <router-link to="/" class="inline-flex items-center gap-3">
-          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-xl font-black text-white">E</div>
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-xl font-black text-white">P</div>
           <div>
-            <p class="text-lg font-black text-slate-900">Ecommerce</p>
+            <p class="text-lg font-black text-slate-900">Pulse Market</p>
             <p class="text-xs text-slate-500">Bem-vindo de volta</p>
           </div>
         </router-link>

@@ -3,10 +3,10 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
       <router-link to="/home" class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
-          E
+          P
         </div>
         <div>
-          <p class="text-lg font-bold tracking-tight text-slate-900">Ecommerce</p>
+          <p class="text-lg font-bold tracking-tight text-slate-900">Pulse Market</p>
           <p class="text-xs text-slate-500">Marketplace</p>
         </div>
       </router-link>

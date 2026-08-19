@@ -46,9 +46,9 @@
                 <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-xl font-black text-white">W</span>
                 <span><strong class="block text-sm text-emerald-950">WhatsApp</strong><small class="text-xs text-emerald-800">Resposta em poucos minutos</small></span>
               </a>
-              <a href="mailto:suporte@ecommerce.com" class="flex items-center gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-5 hover:bg-sky-100">
+              <a href="mailto:suporte@pulsemarket.com" class="flex items-center gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-5 hover:bg-sky-100">
                 <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-600 text-xl font-black text-white">@</span>
-                <span><strong class="block text-sm text-sky-950">E-mail</strong><small class="text-xs text-sky-800">suporte@ecommerce.com</small></span>
+                <span><strong class="block text-sm text-sky-950">E-mail</strong><small class="text-xs text-sky-800">suporte@pulsemarket.com</small></span>
               </a>
             </div>
           </section>
