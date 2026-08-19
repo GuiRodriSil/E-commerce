@@ -87,20 +87,40 @@
             <h2 class="text-3xl font-bold text-slate-900">{{ showOffers ? 'Ofertas em destaque' : 'Produtos em destaque' }}</h2>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-3">
-            <select v-model="selectedCategory" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none hover:border-slate-300">
-              <option value="">Todas as categorias</option>
-              <option v-for="category in categories" :key="category.value" :value="category.value">{{ category.label }}</option>
-            </select>
+            <div class="flex flex-wrap justify-end gap-2" aria-label="Filtrar por categoria">
+              <button
+                type="button"
+                :class="categoryButtonClass('')"
+                @click="selectedCategory = ''"
+              >
+                Todas
+              </button>
+              <button
+                v-for="category in categories"
+                :key="category.value"
+                type="button"
+                :class="categoryButtonClass(category.value)"
+                @click="selectedCategory = category.value"
+              >
+                {{ category.label }}
+              </button>
+            </div>
             <button v-if="showOffers" @click="showAllProducts" class="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-100">
               Mostrar todos
             </button>
           </div>
         </div>
 
-        <p v-if="loading" class="py-10 text-center text-sm text-slate-500">Carregando produtos...</p>
-        <p v-else-if="!visibleProducts.length" class="py-10 text-center text-sm text-slate-500">Nenhum produto encontrado.</p>
+        <div class="relative min-h-[24rem]">
+          <div v-if="loading" class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center" aria-live="polite">
+            <span class="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-500 shadow-sm backdrop-blur-sm">
+              Atualizando produtos...
+            </span>
+          </div>
 
-        <div v-else class="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
+          <p v-if="!loading && !visibleProducts.length" class="py-10 text-center text-sm text-slate-500">Nenhum produto encontrado.</p>
+
+          <div v-if="visibleProducts.length" class="grid gap-8 transition-opacity duration-300 sm:grid-cols-2 xl:grid-cols-3" :class="loading ? 'opacity-50' : 'opacity-100'">
           <article v-for="product in visibleProducts" :key="product.id" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
             <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
               <router-link :to="`/product/${product.id}`" :aria-label="`Ver detalhes de ${product.name}`" class="block h-full">
@@ -155,6 +175,7 @@
               </router-link>
             </div>
           </article>
+          </div>
         </div>
       </section>
     </main>
@@ -163,18 +184,21 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import BenefitsBanner from '../components/BenefitsBanner.vue'
 import { useCartStore } from '../stores/cartStore'
 import { useRecentlyViewedStore } from '../stores/useRecentlyViewedStore'
 import { useWishlistStore } from '../stores/useWishlistStore'
 import { products, withOfferDetails } from '../data/products'
+import { normalizeSearchText } from '../utils/search'
 
 const cartStore = useCartStore()
 const recentlyViewedStore = useRecentlyViewedStore()
 const wishlistStore = useWishlistStore()
+const route = useRoute()
 const displayedProducts = ref(products)
-const selectedCategory = ref('')
+const selectedCategory = ref(route.query.category || '')
 const currentSearch = ref('')
 const loading = ref(false)
 const showOffers = ref(false)
@@ -206,7 +230,8 @@ const normalizeProduct = (product) => ({
 const loadProducts = async () => {
   loading.value = true
   const params = new URLSearchParams()
-  if (currentSearch.value) params.set('search', currentSearch.value)
+  params.set('limit', '100')
+  if (currentSearch.value) params.set('search', normalizeSearchText(currentSearch.value))
   if (selectedCategory.value) params.set('category', selectedCategory.value)
 
   try {
@@ -214,9 +239,9 @@ const loadProducts = async () => {
     if (!response.ok) throw new Error('Falha ao carregar produtos')
     displayedProducts.value = (await response.json()).map(normalizeProduct)
   } catch {
-    const searchText = currentSearch.value.toLowerCase()
+    const searchText = normalizeSearchText(currentSearch.value)
     displayedProducts.value = products.filter((product) => {
-      const matchesSearch = !searchText || `${product.name} ${product.description}`.toLowerCase().includes(searchText)
+      const matchesSearch = !searchText || normalizeSearchText(`${product.name} ${product.description}`).includes(searchText)
       const selectedLabel = categoryLabels[selectedCategory.value]
       const matchesCategory = !selectedCategory.value || product.category === selectedLabel
       return matchesSearch && matchesCategory
@@ -231,6 +256,13 @@ const handleSearch = (value) => {
 }
 
 const visibleProducts = computed(() => showOffers.value ? displayedProducts.value.filter((product) => product.offer) : displayedProducts.value)
+
+const categoryButtonClass = (categoryValue) => [
+  'rounded-full border px-4 py-2 text-sm font-semibold transition',
+  selectedCategory.value === categoryValue
+    ? 'border-slate-900 bg-slate-900 text-white'
+    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+]
 
 const scrollRecentProducts = (direction) => {
   recentProductsCarousel.value?.scrollBy({ left: direction * 320, behavior: 'smooth' })

@@ -3,16 +3,17 @@
     <Navbar />
 
     <main v-if="product" class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div class="mb-6 text-sm text-slate-500">
-        <router-link to="/home" class="hover:text-slate-800">Home</router-link>
-        <span class="mx-2">/</span>
-        <span>{{ product.category }}</span>
-      </div>
+      <Breadcrumbs
+        :items="[
+          { label: 'Home', to: '/home' },
+          { label: product.category, to: { path: '/home', query: { category: categoryPath(product.category) } } },
+          { label: product.name, to: '' },
+        ]"
+        class="mb-6"
+      />
 
       <div class="grid gap-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-soft lg:grid-cols-2 lg:p-8">
-        <div class="overflow-hidden rounded-2xl bg-slate-100">
-          <img :src="product.image" :alt="product.name" class="h-full w-full object-cover" />
-        </div>
+        <ProductImageZoom :src="product.image" :alt="product.name" />
 
         <div class="flex flex-col justify-center">
           <span class="mb-3 inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">
@@ -39,7 +40,7 @@
             >
               {{ cartStore.canAddItem(product) ? 'Adicionar ao carrinho' : 'Estoque máximo' }}
             </button>
-            <button class="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <button @click="buyNow" class="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               Comprar agora
             </button>
           </div>
@@ -57,17 +58,33 @@
 
 <script setup>
 import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Navbar from '../components/Navbar.vue'
+import ProductImageZoom from '../components/ProductImageZoom.vue'
 import RelatedProducts from '../components/RelatedProducts.vue'
 import { useCartStore } from '../stores/cartStore'
 import { useRecentlyViewedStore } from '../stores/useRecentlyViewedStore'
 import { products } from '../data/products'
 
 const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
 const recentlyViewedStore = useRecentlyViewedStore()
 const product = computed(() => products.find((item) => item.id === Number(route.params.id)))
+const categoryPath = (category) => ({
+  Eletrônicos: 'Eletronicos',
+  Áudio: 'Audio',
+  Acessórios: 'Acessorios',
+  Fotografia: 'Fotografia',
+  Casa: 'Casa',
+}[category] || category)
+
+const buyNow = () => {
+  if (product.value) cartStore.addItem(product.value)
+  cartStore.closeConfirmation()
+  router.push('/cart')
+}
 
 watch(() => route.params.id, () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })

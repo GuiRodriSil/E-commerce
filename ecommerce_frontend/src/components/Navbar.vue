@@ -11,7 +11,7 @@
         </div>
       </router-link>
 
-      <div class="hidden flex-1 items-center justify-center px-8 md:flex">
+      <div class="relative hidden flex-1 items-center justify-center px-8 md:flex">
         <label class="flex w-full max-w-xl items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -21,11 +21,33 @@
             type="text"
             placeholder="Buscar produtos..."
             class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+            role="combobox"
+            :aria-expanded="showSuggestions"
+            aria-controls="product-suggestions"
+            @focus="searchFocused = true"
+            @keydown.escape="closeSuggestions"
           />
         </label>
+
+        <div v-if="showSuggestions" id="product-suggestions" class="absolute left-8 right-8 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+          <router-link
+            v-for="product in suggestions"
+            :key="product.id"
+            :to="`/product/${product.id}`"
+            class="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50"
+            @click="closeSuggestions"
+          >
+            <img :src="product.image" :alt="product.name" class="h-12 w-12 rounded-xl object-cover" />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900">{{ product.name }}</span>
+              <span class="mt-1 block text-sm font-bold text-slate-700">R$ {{ Number(product.price).toFixed(2) }}</span>
+            </span>
+          </router-link>
+        </div>
       </div>
 
       <div class="flex items-center gap-3">
+        <ThemeToggle />
         <router-link to="/profile" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
           Perfil
         </router-link>
@@ -59,17 +81,36 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import CartDrawer from './CartDrawer.vue'
+import ThemeToggle from './ThemeToggle.vue'
+import { products } from '../data/products'
+import { normalizeSearchText } from '../utils/search'
 import { useCartStore } from '../stores/cartStore'
 import { useWishlistStore } from '../stores/useWishlistStore'
 
 const emit = defineEmits(['search-change'])
 const search = ref('')
+const searchFocused = ref(false)
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
 const cartDrawerOpen = ref(false)
 let searchTimer
+
+const suggestions = computed(() => {
+  const searchText = normalizeSearchText(search.value)
+  if (!searchText) return []
+
+  return products
+    .filter((product) => normalizeSearchText(`${product.name} ${product.description}`).includes(searchText))
+    .slice(0, 6)
+})
+
+const showSuggestions = computed(() => searchFocused.value && suggestions.value.length > 0)
+
+const closeSuggestions = () => {
+  searchFocused.value = false
+}
 
 watch(search, (value) => {
   clearTimeout(searchTimer)

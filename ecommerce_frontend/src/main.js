@@ -14,6 +14,9 @@ import SupportPage from './pages/SupportPage.vue'
 import WishlistPage from './pages/WishlistPage.vue'
 import { useAuthStore } from './stores/useAuthStore'
 
+const savedTheme = localStorage.getItem('ecommerce-theme')
+document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/home', component: HomePage },
