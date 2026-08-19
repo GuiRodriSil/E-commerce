@@ -92,3 +92,15 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
+
+
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    protocol = Column(String(20), unique=True, index=True, nullable=False)
+    name = Column(String(150), nullable=False)
+    email = Column(String(150), index=True, nullable=False)
+    subject = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

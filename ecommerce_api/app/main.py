@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import List
 
 import mercadopago
@@ -80,6 +81,62 @@ def login(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
+@app.post("/support/tickets", response_model=schemas.SupportTicketResponse, status_code=status.HTTP_201_CREATED, tags=["support"])
+def create_support_ticket(ticket_in: schemas.SupportTicketCreate, db: Session = Depends(get_db)):
+    """Salva uma solicitação de suporte e retorna seu número de protocolo."""
+    values = {
+        "name": ticket_in.name.strip(),
+        "email": str(ticket_in.email),
+        "subject": ticket_in.subject.strip(),
+        "message": ticket_in.message.strip(),
+    }
+    if not values["name"] or not values["subject"] or not values["message"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome, assunto e mensagem são obrigatórios")
+
+    ticket = models.SupportTicket(
+        protocol=f"SUP-{uuid.uuid4().hex[:10].upper()}",
+        **values,
+    )
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+
+    return {
+        "message": "Solicitação recebida com sucesso",
+        "protocol": ticket.protocol,
+        "created_at": ticket.created_at,
+    }
+
+
+@app.get("/users/me", response_model=schemas.UserMeOut, tags=["users"])
+def get_my_profile(current_user: models.User = Depends(get_current_user)):
+    """Retorna os dados e o histórico de pedidos do usuário autenticado."""
+    return current_user
+
+
+@app.put("/users/me", response_model=schemas.UserMeOut, tags=["users"])
+def update_my_profile(
+    user_in: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Atualiza nome e/ou senha do usuário autenticado."""
+    if user_in.name is not None:
+        name = user_in.name.strip()
+        if not name:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O nome não pode ficar vazio")
+        current_user.name = name
+
+    if user_in.password is not None:
+        if len(user_in.password) < 6:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A senha deve ter pelo menos 6 caracteres")
+        current_user.hashed_password = hash_password(user_in.password)
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 # --------------------------------------------------------------------------
 # Products
 # --------------------------------------------------------------------------
@@ -137,8 +194,13 @@ def checkout(current_user: models.User = Depends(get_current_user)):
     return {"message": "Checkout autorizado", "user_id": current_user.id}
 
 
-@app.post("/payments/mercadopago/pix", response_model=schemas.PaymentResponse, tags=["payments"])
-def create_pix_payment(payment_in: schemas.PaymentCreate):
+@app.post("/payments/mercadopago", response_model=schemas.PaymentResponse, tags=["payments"])
+def create_payment(
+    payment_in: schemas.PaymentCreate,
+    current_user: models.User = Depends(get_current_user),
+):
+    if payment_in.payment_method not in {"pix", "card", "boleto"}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Forma de pagamento inválida")
     if not payment_in.items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O carrinho precisa ter pelo menos um item")
 
@@ -164,6 +226,11 @@ def create_pix_payment(payment_in: schemas.PaymentCreate):
     }
 
     try:
+        if payment_in.payment_method == "boleto":
+            preference_data["payment_methods"] = {"excluded_payment_types": [{"id": "credit_card"}, {"id": "debit_card"}, {"id": "bank_transfer"}]}
+        elif payment_in.payment_method == "card":
+            preference_data["payment_methods"] = {"excluded_payment_types": [{"id": "ticket"}, {"id": "bank_transfer"}]}
+
         response = sdk.preference().create(preference_data)
         payment = response.get("response", {})
         if not payment:
@@ -180,6 +247,7 @@ def create_pix_payment(payment_in: schemas.PaymentCreate):
                 "qr_code": "",
                 "transaction_amount": total,
                 "status": "pending",
+                "checkout_url": payment.get("init_point"),
             }
 
         return {
@@ -188,6 +256,7 @@ def create_pix_payment(payment_in: schemas.PaymentCreate):
             "qr_code": qr_code,
             "transaction_amount": total,
             "status": "pending",
+            "checkout_url": payment.get("init_point"),
         }
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro no pagamento: {str(exc)}") from exc

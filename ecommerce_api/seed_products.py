@@ -51,6 +51,38 @@ PRODUCTS = [
         "stock": 15,
         "image_url": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
     },
+    {
+        "name": "Monitor UltraWide 34",
+        "category": "Eletronicos",
+        "description": "Monitor ultrawide para produtividade, criacao e entretenimento com mais espaco na tela.",
+        "price": 1299.90,
+        "stock": 10,
+        "image_url": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Teclado Mecanico RGB",
+        "category": "Acessorios",
+        "description": "Teclado mecanico compacto com iluminacao RGB e resposta precisa.",
+        "price": 249.90,
+        "stock": 22,
+        "image_url": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Poltrona Conforto",
+        "category": "Casa",
+        "description": "Poltrona confortavel com design contemporaneo para seu espaco de descanso.",
+        "price": 899.90,
+        "stock": 6,
+        "image_url": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+        "name": "Caixa de Som Portatil",
+        "category": "Audio",
+        "description": "Caixa de som portatil com graves fortes, bateria duradoura e conexao sem fio.",
+        "price": 179.90,
+        "stock": 31,
+        "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80",
+    },
 ]
 
 

@@ -23,6 +23,11 @@ class TokenOut(BaseModel):
     token_type: str = "bearer"
 
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None
+
+
 class PaymentItem(BaseModel):
     id: int
     title: str
@@ -33,6 +38,7 @@ class PaymentItem(BaseModel):
 class PaymentCreate(BaseModel):
     payer_email: str
     items: List[PaymentItem]
+    payment_method: str = "pix"
 
 
 class PaymentResponse(BaseModel):
@@ -41,6 +47,21 @@ class PaymentResponse(BaseModel):
     qr_code: str
     transaction_amount: float
     status: str
+    checkout_url: Optional[str] = None
+
+
+# ---------- Support ----------
+class SupportTicketCreate(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str
+    message: str
+
+
+class SupportTicketResponse(BaseModel):
+    message: str
+    protocol: str
+    created_at: datetime
 
 
 # ---------- Category ----------
@@ -82,6 +103,10 @@ class UserOut(BaseModel):
     id: int
     name: str
     email: EmailStr
+
+
+class UserMeOut(UserOut):
+    orders: List["OrderOut"] = []
 
 
 # ---------- Order ----------

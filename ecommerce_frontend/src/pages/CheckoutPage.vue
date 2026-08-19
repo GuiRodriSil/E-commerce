@@ -5,12 +5,12 @@
     <main class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div class="mb-8">
         <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Checkout</p>
-        <h1 class="mt-2 text-3xl font-black text-slate-900">Pagamento com PIX</h1>
+        <h1 class="mt-2 text-3xl font-black text-slate-900">Finalizar compra</h1>
       </div>
 
       <div v-if="cart.items.length === 0" class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-soft">
         <p class="text-xl font-semibold text-slate-700">Seu carrinho está vazio.</p>
-        <router-link to="/" class="mt-4 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+        <router-link to="/home" class="mt-4 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
           Voltar às compras
         </router-link>
       </div>
@@ -52,12 +52,22 @@
             </div>
           </div>
 
+          <div class="mt-6">
+            <p class="mb-3 text-sm font-semibold text-slate-700">Forma de pagamento</p>
+            <div class="grid gap-2">
+              <label v-for="method in paymentMethods" :key="method.value" class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 p-3 text-sm text-slate-700 hover:bg-slate-50">
+                <input v-model="selectedMethod" type="radio" name="payment-method" :value="method.value" />
+                <span>{{ method.label }}</span>
+              </label>
+            </div>
+          </div>
+
           <button
-            @click="createPixPayment"
+            @click="createPayment"
             :disabled="loading"
             class="mt-6 w-full rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {{ loading ? 'Gerando PIX...' : 'Pagar com PIX' }}
+            {{ loading ? 'Processando...' : `Pagar com ${selectedMethodLabel}` }}
           </button>
         </aside>
       </div>
@@ -75,27 +85,49 @@
           </div>
         </div>
       </div>
+      <div v-if="checkoutUrl" class="mt-10 rounded-3xl border border-sky-200 bg-sky-50 p-6 shadow-soft">
+        <h2 class="text-2xl font-bold text-sky-900">Pagamento pronto</h2>
+        <p class="mt-2 text-sm text-sky-700">Continue com segurança no Mercado Pago.</p>
+        <a :href="checkoutUrl" target="_blank" rel="noreferrer" class="mt-5 inline-block rounded-full bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-500">Continuar pagamento</a>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import { useCartStore } from '../stores/cartStore'
+import { useAuthStore } from '../stores/useAuthStore'
 
 const cart = useCartStore()
+const auth = useAuthStore()
+const router = useRouter()
 const loading = ref(false)
 const pixData = ref(null)
+const checkoutUrl = ref('')
+const selectedMethod = ref('pix')
+const paymentMethods = [
+  { value: 'pix', label: 'PIX' },
+  { value: 'card', label: 'Cartão de crédito' },
+  { value: 'boleto', label: 'Boleto bancário' },
+]
+const selectedMethodLabel = computed(() => paymentMethods.find((method) => method.value === selectedMethod.value)?.label || 'PIX')
 
-const createPixPayment = async () => {
+const createPayment = async () => {
   if (!cart.items.length) return
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: '/checkout' } })
+    return
+  }
 
   loading.value = true
 
   try {
     const payload = {
-      payer_email: 'comprador@email.com',
+      payer_email: auth.user.email,
+      payment_method: selectedMethod.value,
       items: cart.items.map((item) => ({
         id: item.id,
         title: item.name,
@@ -104,9 +136,9 @@ const createPixPayment = async () => {
       })),
     }
 
-    const response = await fetch('http://localhost:8000/payments/mercadopago/pix', {
+    const response = await fetch('http://localhost:8000/payments/mercadopago', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
       body: JSON.stringify(payload),
     })
 
@@ -115,7 +147,9 @@ const createPixPayment = async () => {
       throw new Error(error.detail || 'Erro ao gerar PIX')
     }
 
-    pixData.value = await response.json()
+    const data = await response.json()
+    pixData.value = selectedMethod.value === 'pix' ? data : null
+    checkoutUrl.value = selectedMethod.value === 'pix' ? '' : data.checkout_url
   } catch (error) {
     alert(error.message)
   } finally {

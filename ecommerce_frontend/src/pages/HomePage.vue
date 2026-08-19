@@ -18,30 +18,37 @@
           <div class="rounded-2xl bg-white/10 p-5 backdrop-blur-sm ring-1 ring-white/10">
             <p class="text-sm uppercase tracking-[0.2em] text-slate-300">Oferta do dia</p>
             <p class="mt-2 text-3xl font-black">até 40% off</p>
-            <button class="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">
-              Ver ofertas
+            <button @click="toggleOffers" class="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">
+              {{ showOffers ? 'Ver todos os produtos' : 'Ver ofertas' }}
             </button>
           </div>
         </div>
       </section>
 
-      <section>
+      <BenefitsBanner />
+
+      <section ref="productsSection">
         <div class="mb-6 flex items-center justify-between">
           <div>
             <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Catalogo</p>
-            <h2 class="text-3xl font-bold text-slate-900">Produtos em destaque</h2>
+            <h2 class="text-3xl font-bold text-slate-900">{{ showOffers ? 'Ofertas em destaque' : 'Produtos em destaque' }}</h2>
           </div>
-          <select v-model="selectedCategory" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none hover:border-slate-300">
-            <option value="">Todas as categorias</option>
-            <option v-for="category in categories" :key="category.value" :value="category.value">{{ category.label }}</option>
-          </select>
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <select v-model="selectedCategory" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none hover:border-slate-300">
+              <option value="">Todas as categorias</option>
+              <option v-for="category in categories" :key="category.value" :value="category.value">{{ category.label }}</option>
+            </select>
+            <button v-if="showOffers" @click="showAllProducts" class="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-100">
+              Mostrar todos
+            </button>
+          </div>
         </div>
 
         <p v-if="loading" class="py-10 text-center text-sm text-slate-500">Carregando produtos...</p>
-        <p v-else-if="!displayedProducts.length" class="py-10 text-center text-sm text-slate-500">Nenhum produto encontrado.</p>
+        <p v-else-if="!visibleProducts.length" class="py-10 text-center text-sm text-slate-500">Nenhum produto encontrado.</p>
 
         <div v-else class="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
-          <article v-for="product in displayedProducts" :key="product.id" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
+          <article v-for="product in visibleProducts" :key="product.id" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
             <div class="aspect-[4/3] overflow-hidden bg-slate-100">
               <img
                 :src="product.image"
@@ -55,6 +62,7 @@
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
                   {{ product.category }}
                 </span>
+                <span v-if="product.offer" class="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-orange-700">Oferta</span>
                 <span class="text-xs text-slate-500">{{ product.stock }} em estoque</span>
               </div>
 
@@ -64,7 +72,10 @@
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-2xl font-black text-slate-900">R$ {{ product.price.toFixed(2) }}</span>
+                <div>
+                  <span v-if="product.originalPrice" class="mr-2 text-sm text-slate-400 line-through">R$ {{ product.originalPrice.toFixed(2) }}</span>
+                  <span class="text-2xl font-black text-slate-900">R$ {{ product.price.toFixed(2) }}</span>
+                </div>
                 <button
                   @click="cartStore.addItem(product)"
                   class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
@@ -85,8 +96,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import Navbar from '../components/Navbar.vue'
+import BenefitsBanner from '../components/BenefitsBanner.vue'
 import { useCartStore } from '../stores/cartStore'
 import { products } from '../data/products'
 
@@ -95,6 +107,8 @@ const displayedProducts = ref(products)
 const selectedCategory = ref('')
 const currentSearch = ref('')
 const loading = ref(false)
+const showOffers = ref(false)
+const productsSection = ref(null)
 const categories = [
   { label: 'Eletrônicos', value: 'Eletronicos' },
   { label: 'Áudio', value: 'Audio' },
@@ -104,11 +118,18 @@ const categories = [
 ]
 
 const categoryLabels = Object.fromEntries(categories.map((category) => [category.value, category.label]))
+const offerDetails = {
+  ...Object.fromEntries(products.filter((product) => product.offer).map((product) => [product.name, product.originalPrice])),
+  'Teclado Mecanico RGB': 399.9,
+  'Caixa de Som Portatil': 299.9,
+}
 
 const normalizeProduct = (product) => ({
   ...product,
   category: categoryLabels[product.category?.name || product.category] || product.category?.name || product.category || 'Sem categoria',
   image: product.image || product.image_url || '',
+  originalPrice: offerDetails[product.name],
+  offer: Boolean(offerDetails[product.name]),
 })
 
 const loadProducts = async () => {
@@ -136,6 +157,26 @@ const loadProducts = async () => {
 
 const handleSearch = (value) => {
   currentSearch.value = value
+}
+
+const visibleProducts = computed(() => showOffers.value ? displayedProducts.value.filter((product) => product.offer) : displayedProducts.value)
+
+const showOffersAndScroll = () => {
+  showOffers.value = true
+  productsSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+const showAllProducts = () => {
+  showOffers.value = false
+}
+
+const toggleOffers = () => {
+  if (showOffers.value) {
+    showAllProducts()
+    return
+  }
+
+  showOffersAndScroll()
 }
 
 watch([currentSearch, selectedCategory], loadProducts)

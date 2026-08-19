@@ -1,7 +1,7 @@
 <template>
   <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-      <router-link to="/" class="flex items-center gap-3">
+      <router-link to="/home" class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
           E
         </div>
@@ -25,18 +25,23 @@
         </label>
       </div>
 
-      <router-link
-        to="/cart"
-        class="relative flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-3 text-slate-700 shadow-sm hover:bg-slate-100"
-        aria-label="Ir para o carrinho"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7M17 13l1.5 7M9 20a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" />
-        </svg>
-        <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
-          {{ cartStore.itemCount }}
-        </span>
-      </router-link>
+      <div class="flex items-center gap-3">
+        <router-link to="/profile" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+          Perfil
+        </router-link>
+        <router-link
+          to="/cart"
+          class="relative flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-3 text-slate-700 shadow-sm hover:bg-slate-100"
+          aria-label="Ir para o carrinho"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7M17 13l1.5 7M9 20a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" />
+          </svg>
+          <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+            {{ cartStore.itemCount }}
+          </span>
+        </router-link>
+      </div>
     </div>
   </header>
 </template>

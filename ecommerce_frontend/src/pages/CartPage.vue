@@ -8,14 +8,14 @@
           <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Carrinho</p>
           <h1 class="mt-2 text-3xl font-black text-slate-900">Seu pedido</h1>
         </div>
-        <router-link to="/" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        <router-link to="/home" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
           Continuar comprando
         </router-link>
       </div>
 
       <div v-if="cart.items.length === 0" class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-soft">
         <p class="text-xl font-semibold text-slate-700">Seu carrinho está vazio.</p>
-        <router-link to="/" class="mt-4 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+        <router-link to="/home" class="mt-4 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
           Explorar produtos
         </router-link>
       </div>

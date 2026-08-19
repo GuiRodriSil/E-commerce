@@ -68,6 +68,7 @@ async def auth_middleware(request: Request, call_next):
         request.url.path == "/orders"
         or request.url.path.startswith("/orders/")
         or request.url.path.startswith("/checkout")
+        or request.url.path.startswith("/payments/mercadopago")
     ):
         return await call_next(request)
 

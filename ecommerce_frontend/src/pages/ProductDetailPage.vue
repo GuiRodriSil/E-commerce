@@ -4,7 +4,7 @@
 
     <main v-if="product" class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div class="mb-6 text-sm text-slate-500">
-        <router-link to="/" class="hover:text-slate-800">Home</router-link>
+        <router-link to="/home" class="hover:text-slate-800">Home</router-link>
         <span class="mx-2">/</span>
         <span>{{ product.category }}</span>
       </div>

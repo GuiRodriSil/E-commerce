@@ -9,14 +9,20 @@ import CheckoutPage from './pages/CheckoutPage.vue'
 import CartPage from './pages/CartPage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import RegisterPage from './pages/RegisterPage.vue'
+import ProfilePage from './pages/ProfilePage.vue'
+import SupportPage from './pages/SupportPage.vue'
+import { useAuthStore } from './stores/useAuthStore'
 
 const routes = [
-  { path: '/', component: HomePage },
+  { path: '/', redirect: '/login' },
+  { path: '/home', component: HomePage },
   { path: '/product/:id', component: ProductDetailPage, props: true },
   { path: '/checkout', component: CheckoutPage },
   { path: '/cart', component: CartPage },
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
+  { path: '/profile', component: ProfilePage },
+  { path: '/support', component: SupportPage },
 ]
 
 const router = createRouter({
@@ -24,9 +30,21 @@ const router = createRouter({
   routes,
 })
 
+router.beforeEach((to) => {
+  if (to.path === '/checkout' && !localStorage.getItem('ecommerce_token')) {
+    return { path: '/login', query: { redirect: '/checkout' } }
+  }
+})
+
 const pinia = createPinia()
 const app = createApp(App)
 
 app.use(pinia)
 app.use(router)
+
+const authStore = useAuthStore(pinia)
+if (authStore.token) {
+  authStore.fetchProfile().catch(() => {})
+}
+
 app.mount('#app')

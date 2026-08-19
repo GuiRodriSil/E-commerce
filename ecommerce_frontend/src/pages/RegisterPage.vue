@@ -86,8 +86,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/useAuthStore'
 
 const router = useRouter()
+const auth = useAuthStore()
 const loading = ref(false)
 const showPassword = ref(false)
 
@@ -137,24 +139,12 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    const response = await fetch('http://localhost:8000/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.value.name,
-        email: form.value.email,
-        password: form.value.password,
-      }),
+    await auth.register({
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
     })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.detail || 'Erro ao cadastrar usuário')
-    }
-
-    localStorage.setItem('ecommerce_token', data.access_token)
-    router.push('/')
+    router.push('/profile')
   } catch (error) {
     errors.value.email = error.message
   } finally {
